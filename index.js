@@ -2,7 +2,7 @@ const { execSync } = require("child_process");
 const { chromium } = require("playwright");
 const { createClient } = require("@supabase/supabase-js");
 
-// ✅ تثبيت Chromium في بيئة Render (مرة واحدة فقط)
+// ✅ تثبيت Chromium في بيئة Render
 try {
   execSync("npx playwright install chromium", { stdio: "inherit" });
 } catch (e) {
@@ -45,6 +45,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log("📌 الضغط على تبويب المؤسسات...");
     await page.click('label[for="ctl00_cphScrollMenu_rbtnCompany"]');
+    await page.waitForTimeout(1000); // انتظار بسيط للتفاعل مع التبويب
+
+    console.log("⏳ في انتظار الحقول...");
+    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', { timeout: 60000 });
+    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtDelegateTCN"]', { timeout: 60000 });
+    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtPassword"]', { timeout: 60000 });
 
     console.log("✍️ إدخال بيانات الشركة والمندوب...");
     await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', '1140163127');
