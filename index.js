@@ -1,51 +1,49 @@
-const { chromium } = require('playwright');
-const { createClient } = require('@supabase/supabase-js');
+const { execSync } = require("child_process");
+const { chromium } = require("playwright");
+const { createClient } = require("@supabase/supabase-js");
 
-// بيانات Supabase
-const SUPABASE_URL = 'https://lifwzerfuobdppwaowcv.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZnd6ZXJmdW9iZHBwd2Fvd2N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTA0NjAsImV4cCI6MjA2MzU4NjQ2MH0.h6hWAkBHdIBV2LITUDWvjGccgIcrpRzuqOv6b1HX8mk';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// ✅ تثبيت Chromium وقت التشغيل (في حالة السيرفر مش منزله تلقائيًا)
+try {
+  execSync("npx playwright install chromium", { stdio: "inherit" });
+} catch (e) {
+  console.error("فشل تثبيت Chromium:", e);
+  process.exit(1);
+}
+
+// ✅ إعداد Supabase
+const supabaseUrl = "https://lifwzerfuobdppwaowcv.supabase.co";
+const supabaseKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZnd6ZXJmdW9iZHBwd2Fvd2N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTA0NjAsImV4cCI6MjA2MzU4NjQ2MH0.h6hWAkBHdIBV2LITUDWvjGccgIcrpRzuqOv6b1HX8mk";
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    proxy: {
-      server: 'http://proxy.toolip.io:31114',
-      username: '55b3d4be',
-      password: 'vygt7axz1hxw'
-    }
-  });
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
 
-  const context = await browser.newContext();
-  const page = await context.newPage();
+  console.log("جارٍ الدخول إلى موقع المرور...");
+  await page.goto("https://moi.gov.ae");
 
-  try {
-    // فتح موقع المرور
-    await page.goto('https://evg.ae/_layouts/EVG/Login.aspx?language=ar');
+  // 👇 حط هنا خطوات البحث عن المخالفات
+  // مثال توضيحي - هتحتاج تكمل حسب البيانات المطلوبة:
+  // await page.fill('input[name="plateNumber"]', '12345');
+  // await page.click('button#search');
 
-    // دخول الشركات
-    await page.click('text=دخول الشركات');
+  // ❗️جمع البيانات
+  const data = {
+    plateNumber: "12345", // Replace with actual data
+    violationCount: 3, // Replace with actual data
+    date: new Date().toISOString(),
+  };
 
-    // إدخال البيانات
-    await page.fill('input[name="ctl00$PlaceHolderMain$CompanyTrafficFileNo"]', '1140163127');
-    await page.fill('input[name="ctl00$PlaceHolderMain$DelegateTrafficFileNo"]', '1070093478');
-    await page.fill('input[name="ctl00$PlaceHolderMain$Password"]', 'Yzaa3vip@');
-    await page.click('input[name="ctl00$PlaceHolderMain$btnLogin"]');
+  // ✅ رفع البيانات لـ Supabase
+  const { error } = await supabase.from("violations").insert([data]);
 
-    // انتظار ظهور الصفحة التالية
-    await page.waitForTimeout(5000);
-
-    // مثال لحفظ البيانات - عدّل حسب البيانات الحقيقية اللي هتسحبها
-    const { error } = await supabase.from('violations').insert([
-      { plate: '12345', amount: 500, date: '2024-05-01' }
-    ]);
-
-    if (error) throw error;
-
-    console.log('✅ تم الدخول وتخزين البيانات بنجاح');
-  } catch (err) {
-    console.error('❌ حصل خطأ أثناء التنفيذ:', err.message);
-  } finally {
-    await browser.close();
+  if (error) {
+    console.error("❌ فشل رفع البيانات لـ Supabase:", error.message);
+  } else {
+    console.log("✅ تم رفع البيانات بنجاح.");
   }
+
+  await browser.close();
 })();
