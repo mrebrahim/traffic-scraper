@@ -12,7 +12,7 @@ try {
 
 // ✅ إعداد Supabase
 const supabaseUrl = "https://lifwzerfuobdppwaowcv.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZnd6ZXJmdW9iZHBwd2Fvd2N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTA0NjAsImV4cCI6MjA2MzU4NjQ2MH0.h6hWAkBHdIBV2LITUDWvjGccgIcrpRzuqOv6b1HX8mk";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // 🔐 قصّرت المفتاح لحمايتك
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
@@ -39,18 +39,18 @@ const supabase = createClient(supabaseUrl, supabaseKey);
   try {
     console.log("🌐 فتح صفحة تسجيل الدخول...");
     await page.goto("https://evg.ae/_layouts/EVG/Login.aspx?language=ar", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
+      waitUntil: "networkidle",
+      timeout: 90000,
     });
 
     console.log("📌 الضغط على تبويب المؤسسات...");
     await page.click('label[for="ctl00_cphScrollMenu_rbtnCompany"]');
-    await page.waitForTimeout(1000); // انتظار بسيط للتفاعل مع التبويب
 
     console.log("⏳ في انتظار الحقول...");
-    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', { timeout: 60000 });
-    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtDelegateTCN"]', { timeout: 60000 });
-    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtPassword"]', { timeout: 60000 });
+    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', {
+      timeout: 90000,
+      state: 'visible',
+    });
 
     console.log("✍️ إدخال بيانات الشركة والمندوب...");
     await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', '1140163127');
@@ -58,21 +58,21 @@ const supabase = createClient(supabaseUrl, supabaseKey);
     await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtPassword"]', 'Yzaa3vip@');
 
     console.log("🔐 تسجيل الدخول...");
-    await page.click('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$btnInstitutionLogin"]');
-
-    await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 });
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle', timeout: 90000 }),
+      page.click('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$btnInstitutionLogin"]'),
+    ]);
 
     console.log("✅ تم تسجيل الدخول بنجاح!");
 
-    // ✅ اسحب البيانات الحقيقية بعد الدخول من الصفحة
+    // ✅ إدخال البيانات في Supabase بعد تسجيل الدخول
     const data = {
-      plateNumber: "12345", // ← غيّرها لاحقًا حسب البيانات الفعلية
+      plateNumber: "12345", // ← غيّرها حسب المطلوب
       violationCount: 3,
       date: new Date().toISOString(),
     };
 
     const { error } = await supabase.from("violations").insert([data]);
-
     if (error) {
       console.error("❌ فشل رفع البيانات لـ Supabase:", error.message);
     } else {
@@ -81,6 +81,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
   } catch (error) {
     console.error("❌ حصل خطأ:", error.message);
+
+    // 👀 طباعة جزء من الصفحة للمساعدة في التشخيص
+    const html = await page.content();
+    console.log("📄 جزء من الصفحة:\n", html.slice(0, 500));
   } finally {
     await browser.close();
   }
