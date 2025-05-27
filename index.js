@@ -38,27 +38,31 @@ const supabase = createClient(supabaseUrl, supabaseKey);
       timeout: 60000,
     });
 
-    // ملء بيانات تسجيل الدخول
-    await page.fill('input[name="ctl00$PlaceHolderMain$CompanyCode"]', '1140163127');
-    await page.fill('input[name="ctl00$PlaceHolderMain$TrafficFileCode"]', '1070093478');
-    await page.fill('input[name="ctl00$PlaceHolderMain$txtPassword"]', 'Yzaa3vip@');
+    console.log("📌 الضغط على زر المؤسسات...");
+    await page.click('button:has-text("المؤسسات")');
+
+    // ملء بيانات تسجيل الدخول للمؤسسات
+    console.log("✍️ إدخال بيانات الشركة والمندوب...");
+    await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', '1140163127');
+    await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtDelegateTCN"]', '1070093478');
+    await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtPassword"]', 'Yzaa3vip@');
 
     // الضغط على زر الدخول
-    await page.click('input[name="ctl00$PlaceHolderMain$btnLogin"]');
+    console.log("🔐 تسجيل الدخول...");
+    await page.click('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$btnInstitutionLogin"]');
 
-    await page.waitForNavigation({ waitUntil: 'networkidle' });
+    await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 });
 
     console.log("✅ تم تسجيل الدخول بنجاح!");
 
-    // ✅ هنا تبدأ تسحب البيانات اللي أنت محتاجها بعد تسجيل الدخول
-    // كمثال بسيط هنستخدم بيانات وهمية
+    // ✅ هنا تبدأ تسحب البيانات بعد الدخول
     const data = {
-      plateNumber: "12345", // ← غيّرها حسب البيانات اللي هتسحبها
+      plateNumber: "12345", // ← عدلها لما تحدد البيانات الحقيقية
       violationCount: 3,
       date: new Date().toISOString(),
     };
 
-    // ✅ رفع البيانات إلى Supabase
+    // رفع البيانات إلى Supabase
     const { error } = await supabase.from("violations").insert([data]);
 
     if (error) {
