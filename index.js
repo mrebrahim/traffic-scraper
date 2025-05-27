@@ -1,6 +1,7 @@
 const { execSync } = require("child_process");
 const { chromium } = require("playwright");
 const { createClient } = require("@supabase/supabase-js");
+const fs = require("fs");
 
 // ✅ تثبيت Chromium في بيئة Render
 try {
@@ -44,12 +45,14 @@ const supabase = createClient(supabaseUrl, supabaseKey);
     });
 
     console.log("📌 الضغط على تبويب المؤسسات...");
-    await page.click('label[for="ctl00_cphScrollMenu_rbtnCompany"]');
+    await page.locator('label[for="ctl00_cphScrollMenu_rbtnCompany"]').click();
+
+    await page.waitForTimeout(4000); // مهلة للسماح بتحميل النموذج
 
     console.log("⏳ في انتظار الحقول...");
-    await page.waitForSelector('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', {
+    await page.waitForSelector('//input[contains(@name, "txtCompanyTCN")]', {
       timeout: 90000,
-      state: 'visible',
+      state: 'visible'
     });
 
     console.log("✍️ إدخال بيانات الشركة والمندوب...");
@@ -82,9 +85,30 @@ const supabase = createClient(supabaseUrl, supabaseKey);
   } catch (error) {
     console.error("❌ حصل خطأ:", error.message);
 
-    // 👀 طباعة جزء من الصفحة للمساعدة في التشخيص
-    const html = await page.content();
-    console.log("📄 جزء من الصفحة:\n", html.slice(0, 500));
+    // 👀 لقطة شاشة للمساعدة في التشخيص
+    const screenshotPath = "/tmp/error-screenshot.png";
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+
+    const imageBuffer = fs.readFileSync(screenshotPath);
+    const imageBase64 = imageBuffer.toString("base64");
+
+    const { error: uploadError } = await supabase.storage
+      .from("screenshots")
+      .upload(`errors/${Date.now()}.png`, imageBuffer, {
+        contentType: "image/png",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("⚠️ فشل رفع لقطة الشاشة:", uploadError.message);
+    } else {
+      console.log("📸 تم رفع لقطة الشاشة لتشخيص المشكلة.");
+    }
+
+    // 🔍 طباعة معلومات إضافية
+    console.log("📄 جزء من الصفحة:\n", (await page.content()).slice(0, 500));
+    console.log("📍 العنوان:", await page.title());
+    console.log("🌐 الرابط:", page.url());
   } finally {
     await browser.close();
   }
