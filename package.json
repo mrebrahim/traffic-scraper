@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Scrape UAE traffic violations using Playwright",
   "main": "index.js",
-  "scripts": {"postinstall": "npx playwright install",
+  "scripts": {
+    "postinstall": "npx playwright install --with-deps",
     "start": "node index.js"
   },
   "dependencies": {
