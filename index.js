@@ -13,7 +13,7 @@ try {
 
 // ✅ إعداد Supabase
 const supabaseUrl = "https://lifwzerfuobdppwaowcv.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // 🔐 قصّرت المفتاح لحمايتك
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZnd6ZXJmdW9iZHBwd2Fvd2N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTA0NjAsImV4cCI6MjA2MzU4NjQ2MH0.h6hWAkBHdIBV2LITUDWvjGccgIcrpRzuqOv6b1HX8mk"; // ← غيّر هذا المفتاح الحقيقي بأمان
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
@@ -47,30 +47,30 @@ const supabase = createClient(supabaseUrl, supabaseKey);
     console.log("📌 الضغط على تبويب المؤسسات...");
     await page.locator('label[for="ctl00_cphScrollMenu_rbtnCompany"]').click();
 
-    await page.waitForTimeout(4000); // مهلة للسماح بتحميل النموذج
+    await page.waitForTimeout(3000);
 
-    console.log("⏳ في انتظار الحقول...");
+    console.log("⏳ في انتظار ظهور الحقول...");
     await page.waitForSelector('//input[contains(@name, "txtCompanyTCN")]', {
-      timeout: 90000,
-      state: 'visible'
+      timeout: 60000,
+      state: 'visible',
     });
 
-    console.log("✍️ إدخال بيانات الشركة والمندوب...");
-    await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', '1140163127');
-    await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtDelegateTCN"]', '1070093478');
-    await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtPassword"]', 'Yzaa3vip@');
+    console.log("✍️ إدخال بيانات المؤسسة...");
+    await page.fill('//input[contains(@name, "txtCompanyTCN")]', '1140163127');
+    await page.fill('//input[contains(@name, "txtTrafficcodenumber")]', '1070093478');
+    await page.fill('//input[contains(@name, "txtPassword")]', 'Yzaa3vip@');
 
-    console.log("🔐 تسجيل الدخول...");
+    console.log("🔐 الضغط على زر تسجيل الدخول...");
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle', timeout: 90000 }),
-      page.click('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$btnInstitutionLogin"]'),
+      page.click('//input[contains(@name, "btnInstitutionLogin")]'),
     ]);
 
     console.log("✅ تم تسجيل الدخول بنجاح!");
 
-    // ✅ إدخال البيانات في Supabase بعد تسجيل الدخول
+    // ✅ إرسال البيانات إلى Supabase
     const data = {
-      plateNumber: "12345", // ← غيّرها حسب المطلوب
+      plateNumber: "12345",
       violationCount: 3,
       date: new Date().toISOString(),
     };
@@ -85,12 +85,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
   } catch (error) {
     console.error("❌ حصل خطأ:", error.message);
 
-    // 👀 لقطة شاشة للمساعدة في التشخيص
     const screenshotPath = "/tmp/error-screenshot.png";
     await page.screenshot({ path: screenshotPath, fullPage: true });
 
     const imageBuffer = fs.readFileSync(screenshotPath);
-    const imageBase64 = imageBuffer.toString("base64");
 
     const { error: uploadError } = await supabase.storage
       .from("screenshots")
@@ -105,7 +103,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
       console.log("📸 تم رفع لقطة الشاشة لتشخيص المشكلة.");
     }
 
-    // 🔍 طباعة معلومات إضافية
     console.log("📄 جزء من الصفحة:\n", (await page.content()).slice(0, 500));
     console.log("📍 العنوان:", await page.title());
     console.log("🌐 الرابط:", page.url());
