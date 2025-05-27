@@ -2,7 +2,7 @@ const { execSync } = require("child_process");
 const { chromium } = require("playwright");
 const { createClient } = require("@supabase/supabase-js");
 
-// ✅ تثبيت Chromium في بيئة Render
+// ✅ تثبيت Chromium في بيئة Render (مرة واحدة فقط)
 try {
   execSync("npx playwright install chromium", { stdio: "inherit" });
 } catch (e) {
@@ -16,38 +16,41 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
-  console.log("🚀 جارٍ تشغيل المتصفح...");
+  console.log("🚀 جارٍ تشغيل المتصفح مع البروكسي...");
 
   const browser = await chromium.launch({
     headless: true,
+    proxy: {
+      server: 'http://proxy.toolip.io:31114',
+      username: '55b3d4be',
+      password: 'vygt7axz1hxw',
+    },
     args: ['--no-sandbox', '--disable-blink-features=AutomationControlled'],
   });
 
   const context = await browser.newContext({
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    ignoreHTTPSErrors: true,
   });
 
   const page = await context.newPage();
 
   try {
     console.log("🌐 فتح صفحة تسجيل الدخول...");
-
     await page.goto("https://evg.ae/_layouts/EVG/Login.aspx?language=ar", {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
 
-    console.log("📌 الضغط على زر المؤسسات...");
-    await page.click('button:has-text("المؤسسات")');
+    console.log("📌 الضغط على تبويب المؤسسات...");
+    await page.click('label[for="ctl00_cphScrollMenu_rbtnCompany"]');
 
-    // ملء بيانات تسجيل الدخول للمؤسسات
     console.log("✍️ إدخال بيانات الشركة والمندوب...");
     await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtCompanyTCN"]', '1140163127');
     await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtDelegateTCN"]', '1070093478');
     await page.fill('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$txtPassword"]', 'Yzaa3vip@');
 
-    // الضغط على زر الدخول
     console.log("🔐 تسجيل الدخول...");
     await page.click('input[name="ctl00$PlaceHolderMain$tc$tcInstitution$btnInstitutionLogin"]');
 
@@ -55,20 +58,19 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log("✅ تم تسجيل الدخول بنجاح!");
 
-    // ✅ هنا تبدأ تسحب البيانات بعد الدخول
+    // ✅ اسحب البيانات الحقيقية بعد الدخول من الصفحة
     const data = {
-      plateNumber: "12345", // ← عدلها لما تحدد البيانات الحقيقية
+      plateNumber: "12345", // ← غيّرها لاحقًا حسب البيانات الفعلية
       violationCount: 3,
       date: new Date().toISOString(),
     };
 
-    // رفع البيانات إلى Supabase
     const { error } = await supabase.from("violations").insert([data]);
 
     if (error) {
       console.error("❌ فشل رفع البيانات لـ Supabase:", error.message);
     } else {
-      console.log("✅ تم رفع البيانات بنجاح.");
+      console.log("✅ تم رفع البيانات إلى Supabase بنجاح.");
     }
 
   } catch (error) {
