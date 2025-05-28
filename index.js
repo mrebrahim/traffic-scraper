@@ -1,4 +1,4 @@
-const { chromium } = require("playwright");
+const puppeteer = require("puppeteer");
 const fs = require("fs");
 const { createClient } = require("@supabase/supabase-js");
 const express = require("express");
@@ -29,48 +29,57 @@ async function runScraper() {
   console.log("🚀 جارٍ تشغيل المتصفح مع البروكسي...");
   let browser;
   try {
-    browser = await chromium.launch({
+    browser = await puppeteer.launch({
       headless: true,
-      proxy: {
-        server: 'http://proxy.toolip.io:31114',
-        username: '55b3d4be',
-        password: 'vygt7axz1hxw',
-      },
-      args: ['--no-sandbox', '--disable-blink-features=AutomationControlled'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--proxy-server=http://proxy.toolip.io:31114'
+      ]
     });
     
-    const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-      ignoreHTTPSErrors: true,
+    const page = await browser.newPage();
+    
+    // إعداد المصادقة للبروكسي
+    await page.authenticate({
+      username: '55b3d4be',
+      password: 'vygt7axz1hxw'
     });
     
-    const page = await context.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    );
+    
     console.log("🌐 فتح صفحة تسجيل الدخول...");
     
     await page.goto("https://evg.ae/_layouts/EVG/Login.aspx?language=ar", {
-      waitUntil: "networkidle",
+      waitUntil: "networkidle2",
       timeout: 90000,
     });
     
     console.log("📌 الضغط على تبويب المؤسسات...");
-    await page.locator('#ctl00_cphScrollMenu_rbtnCompany').check();
+    await page.click('#ctl00_cphScrollMenu_rbtnCompany');
     await page.waitForTimeout(3000);
     
     console.log("⏳ في انتظار ظهور الحقول...");
     await page.waitForSelector('#ctl00_cphScrollMenu_txtCompnayTCF', {
       timeout: 60000,
-      state: 'visible',
+      visible: true,
     });
     
     console.log("✍️ إدخال بيانات المؤسسة...");
-    await page.fill('#ctl00_cphScrollMenu_txtCompnayTCF', '1140163127');
-    await page.fill('#ctl00_cphScrollMenu_txtLogin', '1070093478');
-    await page.fill('#ctl00_cphScrollMenu_txtPassword', 'Yzaa3vip@');
+    await page.type('#ctl00_cphScrollMenu_txtCompnayTCF', '1140163127');
+    await page.type('#ctl00_cphScrollMenu_txtLogin', '1070093478');
+    await page.type('#ctl00_cphScrollMenu_txtPassword', 'Yzaa3vip@');
     
     console.log("🔐 الضغط على زر تسجيل الدخول...");
     await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle', timeout: 90000 }),
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 90000 }),
       page.click('#ctl00_cphScrollMenu_btnLogin'),
     ]);
     
@@ -97,23 +106,25 @@ async function runScraper() {
     
     if (browser) {
       try {
-        const context = await browser.newContext();
-        const page = await context.newPage();
+        const page = await browser.newPage();
         const screenshotPath = "/tmp/error-screenshot.png";
         await page.screenshot({ path: screenshotPath, fullPage: true });
-        const imageBuffer = fs.readFileSync(screenshotPath);
         
-        const { error: uploadError } = await supabase.storage
-          .from("screenshots")
-          .upload(`errors/${Date.now()}.png`, imageBuffer, {
-            contentType: "image/png",
-            upsert: true,
-          });
+        if (fs.existsSync(screenshotPath)) {
+          const imageBuffer = fs.readFileSync(screenshotPath);
           
-        if (uploadError) {
-          console.error("⚠️ فشل رفع لقطة الشاشة:", uploadError.message);
-        } else {
-          console.log("📸 تم رفع لقطة الشاشة لتشخيص المشكلة.");
+          const { error: uploadError } = await supabase.storage
+            .from("screenshots")
+            .upload(`errors/${Date.now()}.png`, imageBuffer, {
+              contentType: "image/png",
+              upsert: true,
+            });
+            
+          if (uploadError) {
+            console.error("⚠️ فشل رفع لقطة الشاشة:", uploadError.message);
+          } else {
+            console.log("📸 تم رفع لقطة الشاشة لتشخيص المشكلة.");
+          }
         }
       } catch (screenshotError) {
         console.error("⚠️ فشل في أخذ لقطة الشاشة:", screenshotError.message);
