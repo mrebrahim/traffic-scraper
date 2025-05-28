@@ -4,7 +4,8 @@
   "description": "Scrape UAE traffic violations using Playwright",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "postinstall": "npx playwright install"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.5",
