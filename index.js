@@ -1,20 +1,13 @@
-const { execSync } = require("child_process");
-const { chromium } = require("playwright"); // ✅ إضافة هذا السطر
-const { createClient } = require("@supabase/supabase-js");
+// ... بداية الكود بدون تغيير
+
+const { chromium } = require("playwright");
 const fs = require("fs");
+const { createClient } = require("@supabase/supabase-js");
 
-// ✅ تثبيت Chromium في بيئة Render
-try {
-  execSync("npx playwright install chromium", { stdio: "inherit" });
-} catch (e) {
-  console.error("❌ فشل تثبيت Chromium:", e);
-  process.exit(1);
-}
-
-// ✅ إعداد Supabase
-const supabaseUrl = "https://lifwzerfuobdppwaowcv.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZnd6ZXJmdW9iZHBwd2Fvd2N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTA0NjAsImV4cCI6MjA2MzU4NjQ2MH0.h6hWAkBHdIBV2LITUDWvjGccgIcrpRzuqOv6b1HX8mk";
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(
+  "https://your-supabase-project-url.supabase.co",
+  "your-anon-or-service-key"
+);
 
 (async () => {
   console.log("🚀 جارٍ تشغيل المتصفح مع البروكسي...");
@@ -57,8 +50,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log("✍️ إدخال بيانات المؤسسة...");
     await page.fill('#ctl00_cphScrollMenu_txtCompnayTCF', '1140163127'); // رقم الرمز المروري للمؤسسة
-    await page.fill('#ctl00_cphScrollMenu_txtLogin', '1070093478'); // الرمز المروري للمندوب
-    await page.fill('#ctl00_cphScrollMenu_txtPassword', 'Yzaa3vip@'); // كلمة المرور
+    await page.fill('#ctl00_cphScrollMenu_txtLogin', '1070093478');       // الرمز المروري للمندوب
+    await page.fill('#ctl00_cphScrollMenu_txtPassword', 'Yzaa3vip@');    // كلمة المرور
 
     console.log("🔐 الضغط على زر تسجيل الدخول...");
     await Promise.all([
