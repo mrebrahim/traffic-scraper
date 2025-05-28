@@ -1,20 +1,4 @@
-const { execSync } = require("child_process");
-const { chromium } = require("playwright");
-const { createClient } = require("@supabase/supabase-js");
-const fs = require("fs");
-
-// ✅ تثبيت Chromium في بيئة Render
-try {
-  execSync("npx playwright install chromium", { stdio: "inherit" });
-} catch (e) {
-  console.error("❌ فشل تثبيت Chromium:", e);
-  process.exit(1);
-}
-
-// ✅ إعداد Supabase
-const supabaseUrl = "https://lifwzerfuobdppwaowcv.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZnd6ZXJmdW9iZHBwd2Fvd2N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTA0NjAsImV4cCI6MjA2MzU4NjQ2MH0.h6hWAkBHdIBV2LITUDWvjGccgIcrpRzuqOv6b1HX8mk"; // ← غيّر هذا المفتاح الحقيقي بأمان
-const supabase = createClient(supabaseUrl, supabaseKey);
+// ... بداية الكود بدون تغيير
 
 (async () => {
   console.log("🚀 جارٍ تشغيل المتصفح مع البروكسي...");
@@ -45,25 +29,25 @@ const supabase = createClient(supabaseUrl, supabaseKey);
     });
 
     console.log("📌 الضغط على تبويب المؤسسات...");
-    await page.locator('label[for="ctl00_cphScrollMenu_rbtnCompany"]').click();
+    await page.locator('#ctl00_cphScrollMenu_rbtnCompany').check();
 
     await page.waitForTimeout(3000);
 
     console.log("⏳ في انتظار ظهور الحقول...");
-    await page.waitForSelector('//input[contains(@name, "txtCompanyTCN")]', {
+    await page.waitForSelector('#ctl00_cphScrollMenu_txtCompnayTCF', {
       timeout: 60000,
       state: 'visible',
     });
 
     console.log("✍️ إدخال بيانات المؤسسة...");
-    await page.fill('//input[contains(@name, "txtCompanyTCN")]', '1140163127');
-    await page.fill('//input[contains(@name, "txtTrafficcodenumber")]', '1070093478');
-    await page.fill('//input[contains(@name, "txtPassword")]', 'Yzaa3vip@');
+    await page.fill('#ctl00_cphScrollMenu_txtCompnayTCF', '1140163127'); // رقم الرمز المروري للمؤسسة
+    await page.fill('#ctl00_cphScrollMenu_txtLogin', '1070093478'); // الرمز المروري للمندوب
+    await page.fill('#ctl00_cphScrollMenu_txtPassword', 'Yzaa3vip@'); // كلمة المرور
 
     console.log("🔐 الضغط على زر تسجيل الدخول...");
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle', timeout: 90000 }),
-      page.click('//input[contains(@name, "btnInstitutionLogin")]'),
+      page.click('#ctl00_cphScrollMenu_btnLogin'),
     ]);
 
     console.log("✅ تم تسجيل الدخول بنجاح!");
