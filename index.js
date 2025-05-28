@@ -1,5 +1,3 @@
-// ... بداية الكود بدون تغيير
-
 const { chromium } = require("playwright");
 const fs = require("fs");
 const { createClient } = require("@supabase/supabase-js");
@@ -12,25 +10,27 @@ const supabase = createClient(
 (async () => {
   console.log("🚀 جارٍ تشغيل المتصفح مع البروكسي...");
 
-  const browser = await chromium.launch({
-    headless: true,
-    proxy: {
-      server: 'http://proxy.toolip.io:31114',
-      username: '55b3d4be',
-      password: 'vygt7axz1hxw',
-    },
-    args: ['--no-sandbox', '--disable-blink-features=AutomationControlled'],
-  });
-
-  const context = await browser.newContext({
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-    ignoreHTTPSErrors: true,
-  });
-
-  const page = await context.newPage();
+  let browser;
 
   try {
+    browser = await chromium.launch({
+      headless: true,
+      proxy: {
+        server: 'http://proxy.toolip.io:31114',
+        username: '55b3d4be',
+        password: 'vygt7axz1hxw',
+      },
+      args: ['--no-sandbox', '--disable-blink-features=AutomationControlled'],
+    });
+
+    const context = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+      ignoreHTTPSErrors: true,
+    });
+
+    const page = await context.newPage();
+
     console.log("🌐 فتح صفحة تسجيل الدخول...");
     await page.goto("https://evg.ae/_layouts/EVG/Login.aspx?language=ar", {
       waitUntil: "networkidle",
@@ -39,7 +39,6 @@ const supabase = createClient(
 
     console.log("📌 الضغط على تبويب المؤسسات...");
     await page.locator('#ctl00_cphScrollMenu_rbtnCompany').check();
-
     await page.waitForTimeout(3000);
 
     console.log("⏳ في انتظار ظهور الحقول...");
@@ -49,9 +48,9 @@ const supabase = createClient(
     });
 
     console.log("✍️ إدخال بيانات المؤسسة...");
-    await page.fill('#ctl00_cphScrollMenu_txtCompnayTCF', '1140163127'); // رقم الرمز المروري للمؤسسة
-    await page.fill('#ctl00_cphScrollMenu_txtLogin', '1070093478');       // الرمز المروري للمندوب
-    await page.fill('#ctl00_cphScrollMenu_txtPassword', 'Yzaa3vip@');    // كلمة المرور
+    await page.fill('#ctl00_cphScrollMenu_txtCompnayTCF', '1140163127');
+    await page.fill('#ctl00_cphScrollMenu_txtLogin', '1070093478');
+    await page.fill('#ctl00_cphScrollMenu_txtPassword', 'Yzaa3vip@');
 
     console.log("🔐 الضغط على زر تسجيل الدخول...");
     await Promise.all([
@@ -61,7 +60,6 @@ const supabase = createClient(
 
     console.log("✅ تم تسجيل الدخول بنجاح!");
 
-    // ✅ إرسال البيانات إلى Supabase
     const data = {
       plateNumber: "12345",
       violationCount: 3,
@@ -78,28 +76,32 @@ const supabase = createClient(
   } catch (error) {
     console.error("❌ حصل خطأ:", error.message);
 
-    const screenshotPath = "/tmp/error-screenshot.png";
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+    if (browser) {
+      const context = await browser.newContext();
+      const page = await context.newPage();
 
-    const imageBuffer = fs.readFileSync(screenshotPath);
+      const screenshotPath = "/tmp/error-screenshot.png";
+      await page.screenshot({ path: screenshotPath, fullPage: true });
 
-    const { error: uploadError } = await supabase.storage
-      .from("screenshots")
-      .upload(`errors/${Date.now()}.png`, imageBuffer, {
-        contentType: "image/png",
-        upsert: true,
-      });
+      const imageBuffer = fs.readFileSync(screenshotPath);
 
-    if (uploadError) {
-      console.error("⚠️ فشل رفع لقطة الشاشة:", uploadError.message);
-    } else {
-      console.log("📸 تم رفع لقطة الشاشة لتشخيص المشكلة.");
+      const { error: uploadError } = await supabase.storage
+        .from("screenshots")
+        .upload(`errors/${Date.now()}.png`, imageBuffer, {
+          contentType: "image/png",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("⚠️ فشل رفع لقطة الشاشة:", uploadError.message);
+      } else {
+        console.log("📸 تم رفع لقطة الشاشة لتشخيص المشكلة.");
+      }
     }
 
-    console.log("📄 جزء من الصفحة:\n", (await page.content()).slice(0, 500));
-    console.log("📍 العنوان:", await page.title());
-    console.log("🌐 الرابط:", page.url());
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 })();
