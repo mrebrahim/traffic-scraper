@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer");
 const fs = require("fs");
 const { createClient } = require("@supabase/supabase-js");
 const express = require("express");
@@ -43,18 +43,18 @@ app.get("/", (req, res) => {
 
 app.get("/test-chrome", async (req, res) => {
   try {
-    const chromePath = findChrome();
-    if (!chromePath) {
-      return res.status(500).json({ 
-        success: false, 
-        error: "Chrome not found on system" 
-      });
-    }
-    
     const browser = await puppeteer.launch({
-      executablePath: chromePath,
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-extensions',
+        '--disable-default-apps'
+      ]
     });
     
     const page = await browser.newPage();
@@ -62,7 +62,7 @@ app.get("/test-chrome", async (req, res) => {
     const content = await page.content();
     await browser.close();
     
-    res.json({ success: true, chromePath, content: content.substring(0, 200) });
+    res.json({ success: true, content: content.substring(0, 200) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -80,17 +80,9 @@ app.get("/scrape", async (req, res) => {
 async function runScraper() {
   console.log("🚀 جارٍ تشغيل المتصفح مع البروكسي...");
   
-  const chromePath = findChrome();
-  if (!chromePath) {
-    throw new Error("Chrome executable not found on system");
-  }
-  
-  console.log(`📍 استخدام Chrome من: ${chromePath}`);
-  
   let browser;
   try {
     browser = await puppeteer.launch({
-      executablePath: chromePath,
       headless: true,
       args: [
         '--no-sandbox',
@@ -206,7 +198,7 @@ async function runScraper() {
 // تشغيل الخادم
 app.listen(PORT, () => {
   console.log(`🚀 الخادم يعمل على البورت ${PORT}`);
-  console.log(`🔍 Chrome path: ${findChrome() || 'Not found'}`);
+  console.log(`🔍 Chrome status: Using Puppeteer's built-in Chrome`);
 });
 
 // معالج الأخطاء العام
