@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: traffic-scraper
-    env: node
-    buildCommand: npm install && npx playwright install --with-deps chromium
-    startCommand: npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
